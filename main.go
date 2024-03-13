@@ -7,6 +7,7 @@ import (
 	"io"
 	"math/big"
 	"net/http"
+	"strconv"
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -16,7 +17,7 @@ import (
 // See this branch with endpoint to retrieve merkle proof:
 // https://github.com/waku-org/go-waku/compare/master...merkle-proof-provider
 // Deployed in sandbox machine as proof of concept.
-const MerkleProofProdiver = "http://65.21.94.244:30304"
+const MerkleProofProdiver = "http://65.21.94.244:30312"
 
 func main() {
 	rlnInstance, err := rln.NewRLN()
@@ -51,7 +52,7 @@ func main() {
 
 	// We create a witness with the merkle proof and our secret
 	witness := rln.CreateWitness(idSecretHash, someMessage, epoch, rln.MerkleProof{
-		PathIndexes:  merkleProof.MerkePathIndexes,
+		PathIndexes:  ConvertStringToUint8(merkleProof.MerkePathIndexes),
 		PathElements: ConvertStringToBytes(merkleProof.MerkePathElements),
 	})
 
@@ -69,7 +70,7 @@ func main() {
 type MerkleProofResponse struct {
 	MerkleRoot        string   `json:"root"`
 	MerkePathElements []string `json:"pathElements"`
-	MerkePathIndexes  []uint8  `json:"pathIndexes"`
+	MerkePathIndexes  []string `json:"pathIndexes"`
 	LeafIndex         uint64   `json:"leafIndex"`
 	CommitmentId      string   `json:"commitmentId"`
 }
@@ -95,6 +96,19 @@ func GetMerkleProof(publicCommitment *big.Int) (*MerkleProofResponse, error) {
 	}
 
 	return merkleProof, err
+}
+
+func ConvertStringToUint8(pathIndexesStr []string) []uint8 {
+	// Convert merkle proof from string to uint8
+	pathIndexes := make([]uint8, 0)
+	for _, pathIndex := range pathIndexesStr {
+		pathIndexUint8, err := strconv.ParseUint(pathIndex, 10, 8)
+		if err != nil {
+			log.Fatal(err)
+		}
+		pathIndexes = append(pathIndexes, uint8(pathIndexUint8))
+	}
+	return pathIndexes
 }
 
 func ConvertStringToBytes(pathElementsStr []string) [][32]byte {
