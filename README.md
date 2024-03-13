@@ -10,8 +10,28 @@ This feature is useful for light clients since they no longer need to sync the w
 
 A service like [this one](https://github.com/waku-org/go-waku/compare/master...merkle-proof-provider) can be offered by any waku node, and returns the Merkle proof and root of a given commitment in the tree. For example, lets say that a light client with public commitment `21235824865182058647676208664819393617711826061506661756580202797779091020767` wants to create a RLN zk proof for a given message. It can use the above fork as:
 
+
+Run service:
 ```
-curl http://65.21.94.244:30304/debug/v1/merkleProof/21235824865182058647676208664819393617711826061506661756580202797779091020767
+version: "3.9"
+
+services:
+  oracle:
+    image: c809cb8e35099ca552e12a2a6d86a73442684ed2b4f5fe75d7601ec0cc867299
+    command:
+      - --rest
+      - --rest-address=0.0.0.0
+      - --rest-port=30312
+      - --rln-relay=true
+      - --rln-relay-dynamic=true
+      - --rln-relay-eth-client-address=wss://sepolia.infura.io/ws/v3/replacethis!!
+      - --rln-relay-eth-contract-address=0xF471d71E9b1455bBF4b85d475afb9BB0954A29c4
+    ports:
+      - 0.0.0.0:30312:30312
+```
+
+```
+curl http://65.21.94.244:30312/debug/v1/merkleProof/21235824865182058647676208664819393617711826061506661756580202797779091020767
 ```
 
 Which returns all needed elements to generate a RLN proof. With this plus the message, epoch and secret, the light client can generate the proof. No tree needed.
